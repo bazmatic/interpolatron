@@ -1,0 +1,51 @@
+# Video files and directories
+input/
+output/
+temp/
+slow/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
+*.webm
+*.m4v
+
+# Test files
+test_*.mp4
+debug_*.mp4
+temp_*.mp4
+*_60fps*.mp4
+*_fast.mp4
+*_slow*.mp4
+*_very_slow.mp4
+*_smooth.mp4
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp

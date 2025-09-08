@@ -1,0 +1,11 @@
+# Video Interpolation Tool Requirements
+# 
+# This tool primarily uses FFmpeg for video processing.
+# FFmpeg must be installed separately on your system.
+#
+# Python dependencies (minimal - mostly standard library)
+# No additional Python packages required for basic functionality
+
+# Optional: For enhanced video processing capabilities
+# opencv-python>=4.5.0  # Uncomment if you want to add OpenCV features
+# numpy>=1.20.0         # Uncomment if you want to add numerical processing 
