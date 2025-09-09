@@ -365,25 +365,7 @@ curl -L -o model/vimeo_unet.pth "https://huggingface.co/ucfzl/TLBVFI/resolve/mai
 curl -L -o model/vimeo_new.ckpt "https://huggingface.co/ucfzl/TLBVFI/resolve/main/vimeo_new.ckpt"
 
 # Method 3: Manual download from Google Drive links above
-```
-
-#### Verification
-
-After downloading, verify the files exist:
-```bash
-ls -lh model/
-# Should show:
-# -rw-r--r--  1 user  group   1.9G Dec 10 12:34 vimeo_unet.pth
-# -rw-r--r--  1 user  group   6.7G Dec 10 12:35 vimeo_new.ckpt
-```
-
-### TLBVFI Acknowledgments
-
-The original TLBVFI implementation gratefully appreciates:
-- [BBDM](https://github.com/xuekt98/BBDM)
-- [LDMVFI](https://github.com/danier97/LDMVFI)
-- [VFIformer](https://github.com/dvlab-research/VFIformer)
-
+``
 ## General Acknowledgments
 
 - Based on FFmpeg interpolation techniques
