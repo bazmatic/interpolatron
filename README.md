@@ -332,6 +332,51 @@ This version includes state-of-the-art optimizations for modern hardware:
 - **LPIPS GPU acceleration**: Perceptual loss calculations on GPU
 - **TLBVFI CPU optimization**: Main model processing with multi-core efficiency
 
+### Model Files (Download Required)
+
+The TLBVFI AI interpolation requires trained model files that are not included in this repository due to their large size (approximately 8.6GB total). You must download these files separately:
+
+#### Required Model Files
+
+1. **Main TLBVFI Model** (`vimeo_unet.pth` - 1.9GB)
+   - Download from: [Hugging Face](https://huggingface.co/ucfzl/TLBVFI)
+   - Alternative: [Google Drive](https://drive.google.com/file/d/1e_v32r6dxRXzjQXo6XDALiO9PM-w6aJS/view?usp=sharing)
+   - Place in: `model/vimeo_unet.pth`
+
+2. **VQGAN Autoencoder** (`vimeo_new.ckpt` - 6.7GB)
+   - Download from: [Hugging Face](https://huggingface.co/ucfzl/TLBVFI)
+   - Alternative: [Google Drive](https://drive.google.com/file/d/11HOW6LOwxOae2ET63Fqzs9Dzg3-F9pw9/view?usp=sharing)
+   - Place in: `model/vimeo_new.ckpt`
+
+#### Download Instructions
+
+```bash
+# Create model directory
+mkdir -p model
+
+# Download the models (choose one method)
+
+# Method 1: Using wget
+wget -O model/vimeo_unet.pth "https://huggingface.co/ucfzl/TLBVFI/resolve/main/vimeo_unet.pth"
+wget -O model/vimeo_new.ckpt "https://huggingface.co/ucfzl/TLBVFI/resolve/main/vimeo_new.ckpt"
+
+# Method 2: Using curl
+curl -L -o model/vimeo_unet.pth "https://huggingface.co/ucfzl/TLBVFI/resolve/main/vimeo_unet.pth"
+curl -L -o model/vimeo_new.ckpt "https://huggingface.co/ucfzl/TLBVFI/resolve/main/vimeo_new.ckpt"
+
+# Method 3: Manual download from Google Drive links above
+```
+
+#### Verification
+
+After downloading, verify the files exist:
+```bash
+ls -lh model/
+# Should show:
+# -rw-r--r--  1 user  group   1.9G Dec 10 12:34 vimeo_unet.pth
+# -rw-r--r--  1 user  group   6.7G Dec 10 12:35 vimeo_new.ckpt
+```
+
 ### TLBVFI Acknowledgments
 
 The original TLBVFI implementation gratefully appreciates:

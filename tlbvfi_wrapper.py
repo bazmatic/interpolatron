@@ -40,7 +40,13 @@ class TLBVFIWrapper:
             raise FileNotFoundError(f"TLBVFI repository not found at: {self.tlbvfi_dir}")
         
         if not self.model_path.exists():
-            raise FileNotFoundError(f"TLBVFI model not found at: {self.model_path}")
+            raise FileNotFoundError(
+                f"TLBVFI model not found at: {self.model_path}\n"
+                "Please download the required model files:\n"
+                "1. vimeo_unet.pth from https://huggingface.co/ucfzl/TLBVFI\n"
+                "2. vimeo_new.ckpt from https://huggingface.co/ucfzl/TLBVFI\n"
+                "See the README.md for detailed download instructions."
+            )
         
         if not self.config_path.exists():
             raise FileNotFoundError(f"TLBVFI config not found at: {self.config_path}")
