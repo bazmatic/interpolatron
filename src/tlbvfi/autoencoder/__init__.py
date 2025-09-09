@@ -1,0 +1,3 @@
+"""
+VQGAN autoencoder for TLBVFI.
+"""
