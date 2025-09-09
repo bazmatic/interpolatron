@@ -5,10 +5,12 @@ A powerful command-line tool for video frame interpolation using FFmpeg. This to
 ## Features
 
 - **Multiple Interpolation Methods**: Choose from frame duplication, temporal interpolation, optical flow, and advanced multi-pass interpolation
+- **AI-Powered Interpolation**: TLBVFI integration for high-quality AI-based frame interpolation (with CPU fallback)
 - **Flexible Frame Rate Control**: Set any target frame rate (e.g., 30fps → 60fps, 24fps → 120fps)
 - **Quality Presets**: Different quality settings for speed vs. quality trade-offs
 - **Video Information**: Get detailed information about input videos
 - **Error Handling**: Robust error handling and progress reporting
+- **Cross-Platform**: Works on macOS, Linux, and Windows (with CPU fallback for macOS)
 
 ## Prerequisites
 
@@ -93,6 +95,14 @@ python video_interpolator.py -i input.mp4 -o output.mp4 -m temporal -f 60
 - **Quality**: Best
 - **Use Case**: Professional quality, multi-pass processing
 - **Command**: `-m advanced`
+
+#### 5. TLBVFI AI Interpolation (`tlbvfi`)
+- **Speed**: Variable (depends on hardware)
+- **Quality**: Excellent (AI-powered)
+- **Use Case**: High-quality AI-based frame interpolation
+- **Command**: `-m tlbvfi`
+- **Requirements**: PyTorch, torchvision, and other ML dependencies
+- **Note**: Works on CPU (slower) or GPU with CUDA (faster)
 
 ### Examples
 
@@ -208,6 +218,49 @@ Multi-pass approach that first extracts frames, then applies sophisticated inter
 - `FFmpeg not found`: Install FFmpeg or specify correct path
 - `Input file not found`: Check file path and permissions
 - `Interpolation failed`: Check FFmpeg error output for details
+
+## TLBVFI AI Interpolation
+
+### Installation
+
+For AI-powered interpolation using TLBVFI, install the additional dependencies:
+
+```bash
+# Basic ML dependencies
+pip install torch torchvision opencv-python Pillow numpy einops omegaconf tqdm
+
+# Optional: For GPU acceleration (requires CUDA)
+pip install cupy-cuda11x  # or cupy-cuda12x depending on your CUDA version
+```
+
+### Usage
+
+```bash
+# AI interpolation (will use CPU fallback on macOS)
+python video_interpolator.py -i input.mp4 -o output.mp4 -m tlbvfi -f 60
+```
+
+### Performance Notes
+
+- **CPU Mode**: Works on all systems but is slower
+- **GPU Mode**: Requires CUDA-compatible GPU and CuPy installation
+- **Memory**: AI interpolation requires more RAM (8GB+ recommended)
+- **Quality**: Generally produces higher quality results than traditional methods
+
+### Troubleshooting TLBVFI
+
+1. **"TLBVFI not available"**
+   - Install required dependencies: `pip install torch torchvision opencv-python Pillow numpy`
+   - Check that the `tlbvfi_original` directory exists
+
+2. **"CuPy not available"**
+   - This is normal on macOS - the system will use CPU fallback
+   - For GPU acceleration, install CuPy: `pip install cupy-cuda11x`
+
+3. **Out of memory errors**
+   - Reduce video resolution or length
+   - Close other applications
+   - Use CPU mode if GPU memory is insufficient
 
 ## Advanced Usage
 

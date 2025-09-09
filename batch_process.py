@@ -61,15 +61,32 @@ def process_video(input_path: str, output_path: str, speed: float, interpolation
     print(f"   Method: {interpolation_method}")
     
     # Command: Custom speed with specified interpolation method (no audio) and frame removal
-    cmd = [
-        "python", interpolator_script,
-        "-i", input_path,
-        "-o", output_path,
-        "--speed", str(speed),
-        "--interpolation", interpolation_method,
-        "--no-audio",
-        "--remove-frames", "3"
-    ]
+    # For TLBVFI and advanced methods, use direct interpolation without speed adjustment
+    if interpolation_method in ['tlbvfi', 'advanced']:
+        # For AI methods, just interpolate to target FPS (no speed adjustment)
+        target_fps = 60  # Standard interpolation target
+        
+        cmd = [
+            "python", interpolator_script,
+            "-i", input_path,
+            "-o", output_path,
+            "--method", interpolation_method,
+            "--fps", str(target_fps),
+            "--no-audio",
+            "--remove-frames", "3"
+        ]
+            
+    else:
+        # For traditional methods, use --interpolation with --speed
+        cmd = [
+            "python", interpolator_script,
+            "-i", input_path,
+            "-o", output_path,
+            "--speed", str(speed),
+            "--interpolation", interpolation_method,
+            "--no-audio",
+            "--remove-frames", "3"
+        ]
     
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -146,30 +163,45 @@ def main() -> None:
     print("\n🎯 Available interpolation methods:")
     print("   1. frame_duplication - Fastest, duplicates frames")
     print("   2. temporal - Balanced quality using minterpolate filter")
-    print("   3. optical_flow - Highest quality (current default)")
+    print("   3. optical_flow - High quality using optical flow")
+    print("   4. advanced - Best quality, multi-pass processing")
+    print("   5. tlbvfi - AI-powered, state-of-the-art quality (requires PyTorch)")
     
     while True:
-        method_input = input("\n⚙️  Choose interpolation method (1-3) or enter method name: ").strip()
+        method_input = input("\n⚙️  Choose interpolation method (1-5) or enter method name: ").strip()
         
         # Handle numeric input
-        if method_input in ['1', '2', '3']:
+        if method_input in ['1', '2', '3', '4', '5']:
             method_map = {
                 '1': 'frame_duplication',
                 '2': 'temporal', 
-                '3': 'optical_flow'
+                '3': 'optical_flow',
+                '4': 'advanced',
+                '5': 'tlbvfi'
             }
             interpolation_method = method_map[method_input]
             break
         
         # Handle direct method name input
-        elif method_input in ['frame_duplication', 'temporal', 'optical_flow']:
+        elif method_input in ['frame_duplication', 'temporal', 'optical_flow', 'advanced', 'tlbvfi']:
             interpolation_method = method_input
             break
         
         else:
-            print("❌ Invalid input. Please enter 1-3 or a valid method name.")
+            print("❌ Invalid input. Please enter 1-5 or a valid method name.")
     
-    print(f"⚙️  Processing settings: {speed}x speed with {interpolation_method} interpolation (no audio, remove first 3 frames)")
+    # Special note for TLBVFI
+    if interpolation_method == 'tlbvfi':
+        print("\n🤖 TLBVFI Selected - AI-Powered Interpolation")
+        print("   Note: This method requires PyTorch and may take longer to process.")
+        print("   GPU acceleration will be used if available.")
+        print("   TLBVFI will interpolate to 60fps (no speed adjustment).")
+        print("   If TLBVFI fails, processing will stop.")
+    
+    if interpolation_method in ['tlbvfi', 'advanced']:
+        print(f"⚙️  Processing settings: {interpolation_method} interpolation to 60fps (no audio, remove first 3 frames)")
+    else:
+        print(f"⚙️  Processing settings: {speed}x speed with {interpolation_method} interpolation (no audio, remove first 3 frames)")
     print("-" * 60)
     
     # Process each video

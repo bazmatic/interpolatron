@@ -8,4 +8,18 @@
 
 # Optional: For enhanced video processing capabilities
 # opencv-python>=4.5.0  # Uncomment if you want to add OpenCV features
-# numpy>=1.20.0         # Uncomment if you want to add numerical processing 
+# numpy>=1.20.0         # Uncomment if you want to add numerical processing
+
+# TLBVFI AI Interpolation Dependencies (Optional)
+# Install these for AI-powered video interpolation
+# torch>=1.9.0
+# torchvision>=0.10.0
+# opencv-python>=4.5.0
+# Pillow>=8.0.0
+# numpy>=1.20.0
+# einops>=0.4.0
+# omegaconf>=2.1.0
+# tqdm>=4.60.0
+
+# CuPy is now optional - install for CUDA acceleration, skip for CPU-only operation
+# cupy-cuda11x>=13.0.0  # Uncomment this line if you have CUDA and want GPU acceleration 

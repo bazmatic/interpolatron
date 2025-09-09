@@ -22,18 +22,28 @@ import os
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 
+# TLBVFI integration
+try:
+    from tlbvfi_wrapper import TLBVFIWrapper
+    TLBVFI_AVAILABLE = True
+except ImportError as e:
+    TLBVFI_AVAILABLE = False
+
 
 class VideoInterpolator:
     """Video interpolation and speed adjustment tool using FFmpeg."""
     
-    def __init__(self, ffmpeg_path: str = "ffmpeg"):
+    def __init__(self, ffmpeg_path: str = "ffmpeg", tlbvfi_model_path: str = "model/vimeo_unet.pth"):
         """
         Initialize the video interpolator.
         
         Args:
             ffmpeg_path: Path to FFmpeg executable
+            tlbvfi_model_path: Path to TLBVFI model file
         """
         self.ffmpeg_path = ffmpeg_path
+        self.tlbvfi_model_path = tlbvfi_model_path
+        self.tlbvfi_wrapper = None
         self._check_ffmpeg()
     
     def _check_ffmpeg(self) -> None:
@@ -457,6 +467,36 @@ class VideoInterpolator:
         
         return self._run_ffmpeg_command(cmd, "Optical flow interpolation")
     
+    def tlbvfi_interpolation(self, input_path: str, output_path: str, target_fps: int = 60) -> bool:
+        """
+        Perform TLBVFI-based interpolation for high-quality frame interpolation.
+        
+        Args:
+            input_path: Path to input video
+            output_path: Path to output video
+            target_fps: Target frame rate
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if not TLBVFI_AVAILABLE:
+            print("✗ TLBVFI not available. Please install required dependencies:")
+            print("  pip install torch torchvision opencv-python Pillow numpy")
+            print("  Note: TLBVFI now supports CPU fallback - CuPy (CUDA) is optional for acceleration")
+            return False
+        
+        try:
+            # Initialize TLBVFI wrapper if not already done
+            if self.tlbvfi_wrapper is None:
+                self.tlbvfi_wrapper = TLBVFIWrapper(self.tlbvfi_model_path)
+            
+            print(f"Using TLBVFI interpolation (model: {self.tlbvfi_model_path})")
+            return self.tlbvfi_wrapper.interpolate_video(input_path, output_path, target_fps)
+            
+        except Exception as e:
+            print(f"✗ TLBVFI interpolation failed: {e}")
+            return False
+    
     def advanced_interpolation(self, input_path: str, output_path: str, target_fps: int = 60) -> bool:
         """
         Perform advanced interpolation with multiple passes.
@@ -603,6 +643,9 @@ Examples:
   # Advanced interpolation (best quality, slowest)
   python video_interpolator.py -i input.mp4 -o output.mp4 -m advanced -f 60
   
+  # TLBVFI interpolation (AI-powered, highest quality)
+  python video_interpolator.py -i input.mp4 -o output.mp4 -m tlbvfi -f 60
+  
   # Slow down video to 50% speed
   python video_interpolator.py -i input.mp4 -o output.mp4 --speed 0.5
   
@@ -630,7 +673,7 @@ Examples:
     
     parser.add_argument(
         "-m", "--method",
-        choices=["frame_duplication", "temporal", "optical_flow", "advanced"],
+        choices=["frame_duplication", "temporal", "optical_flow", "advanced", "tlbvfi"],
         default="temporal",
         help="Interpolation method (default: temporal)"
     )
@@ -679,6 +722,13 @@ Examples:
         help="Remove the first N frames from the video (default: 0)"
     )
     
+    parser.add_argument(
+        "--tlbvfi-model",
+        type=str,
+        default="model/vimeo_unet.pth",
+        help="Path to TLBVFI model file (default: model/vimeo_unet.pth)"
+    )
+    
     args = parser.parse_args()
     
     # Validate input file
@@ -687,7 +737,7 @@ Examples:
         sys.exit(1)
     
     # Initialize interpolator
-    interpolator = VideoInterpolator(args.ffmpeg_path)
+    interpolator = VideoInterpolator(args.ffmpeg_path, args.tlbvfi_model)
     
     # Show video info if requested
     if args.info:
@@ -753,6 +803,8 @@ Examples:
             success = interpolator.optical_flow_interpolation(args.input, args.output, args.fps)
         elif args.method == "advanced":
             success = interpolator.advanced_interpolation(args.input, args.output, args.fps)
+        elif args.method == "tlbvfi":
+            success = interpolator.tlbvfi_interpolation(args.input, args.output, args.fps)
     
     if success:
         print(f"\n✓ Video processing completed successfully!")
