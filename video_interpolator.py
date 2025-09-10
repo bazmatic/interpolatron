@@ -499,53 +499,39 @@ class VideoInterpolator:
     
     def advanced_interpolation(self, input_path: str, output_path: str, target_fps: int = 60) -> bool:
         """
-        Perform advanced interpolation with multiple passes.
-        
+        Perform advanced interpolation with optimized single-pass processing.
+
+        This enhanced version uses optimized FFmpeg parameters to reduce visual artifacts
+        and provide better temporal consistency compared to the previous multi-pass approach.
+
         Args:
             input_path: Path to input video
             output_path: Path to output video
             target_fps: Target frame rate
-            
+
         Returns:
             True if successful, False otherwise
         """
-        # First pass: extract frames
-        temp_dir = Path("temp_frames")
-        temp_dir.mkdir(exist_ok=True)
-        
-        extract_cmd = [
+        print("🎬 Advanced Interpolation (Enhanced Single-Pass)")
+        print("   Features: Optimized motion estimation, scene change detection, artifact reduction")
+
+        # Enhanced single-pass interpolation with optimized parameters
+        cmd = [
             self.ffmpeg_path,
             "-i", input_path,
-            "-vf", "fps=1",
-            "-frame_pts", "1",
-            str(temp_dir / "frame_%d.png"),
-            "-y"
-        ]
-        
-        if not self._run_ffmpeg_command(extract_cmd, "Frame extraction", silent=True):
-            return False
-        
-        # Second pass: interpolate
-        interpolate_cmd = [
-            self.ffmpeg_path,
-            "-framerate", "1",
-            "-i", str(temp_dir / "frame_%d.png"),
-            "-filter:v", f"minterpolate='fps={target_fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1'",
+            "-filter:v", f"minterpolate='fps={target_fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1:search_param=32:scd_threshold=10.0'",
             "-c:v", "libx264",
             "-preset", "slow",
-            "-crf", "18",
+            "-crf", "18",  # Higher quality encoding
+            "-pix_fmt", "yuv420p",  # Ensure compatible pixel format
             "-y",
             output_path
         ]
-        
-        success = self._run_ffmpeg_command(interpolate_cmd, "Advanced interpolation")
-        
-        # Cleanup
-        import shutil
-        if temp_dir.exists():
-            shutil.rmtree(temp_dir)
-        
-        return success
+
+        print(f"   Interpolating to {target_fps} FPS with enhanced motion estimation...")
+        print("   Parameters: scene detection, optimized search, artifact reduction")
+
+        return self._run_ffmpeg_command(cmd, "Advanced interpolation")
     
     def _run_ffmpeg_command(self, cmd: List[str], operation_name: str, silent: bool = False, 
                            expected_duration: Optional[float] = None, output_path: Optional[str] = None) -> bool:

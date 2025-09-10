@@ -40,17 +40,48 @@ def get_video_files(input_dir: str) -> List[str]:
     return sorted(video_files)
 
 
-def process_video(input_path: str, output_path: str, speed: float, interpolation_method: str, interpolator_script: str = "video_interpolator.py") -> bool:
+def get_video_fps(video_path: str, interpolator_script: str = "video_interpolator.py") -> float:
+    """
+    Get the FPS of a video file using ffprobe.
+
+    Args:
+        video_path: Path to video file
+        interpolator_script: Path to the video interpolator script
+
+    Returns:
+        FPS as float, or 30.0 as fallback
+    """
+    try:
+        # Use ffprobe directly for better reliability
+        cmd = ["ffprobe", "-v", "quiet", "-select_streams", "v:0", "-show_entries", "stream=avg_frame_rate", "-of", "csv=p=0", video_path]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        fps_str = result.stdout.strip()
+
+        # Parse fps (format is usually "num/den" like "30/1")
+        if '/' in fps_str:
+            num, den = fps_str.split('/')
+            fps = float(num) / float(den)
+        else:
+            fps = float(fps_str)
+
+        return fps if fps > 0 else 30.0
+    except (subprocess.CalledProcessError, ValueError, IndexError):
+        print(f"   ⚠️  Could not determine FPS for {video_path}, using default 30.0")
+        return 30.0
+
+
+def process_video(input_path: str, output_path: str, speed: float, interpolation_method: str, interpolator_script: str = "video_interpolator.py", target_fps: float = None) -> bool:
     """
     Process a single video with specified speed and interpolation method.
-    
+
     Args:
         input_path: Path to input video
         output_path: Path to output video
         speed: Speed multiplier (e.g., 0.5 for slow motion, 2.0 for fast motion)
         interpolation_method: Interpolation method to use
         interpolator_script: Path to the video interpolator script
-        
+        target_fps: Target FPS for interpolation (if None, auto-calculate for optimal interpolation)
+
     Returns:
         True if successful, False otherwise
     """
@@ -59,23 +90,31 @@ def process_video(input_path: str, output_path: str, speed: float, interpolation
     print(f"   Output: {output_path}")
     print(f"   Speed: {speed}x")
     print(f"   Method: {interpolation_method}")
-    
+
     # Command: Custom speed with specified interpolation method (no audio) and frame removal
     # For TLBVFI and advanced methods, use direct interpolation without speed adjustment
     if interpolation_method in ['tlbvfi', 'advanced']:
-        # For AI methods, just interpolate to target FPS (no speed adjustment)
-        target_fps = 60  # Standard interpolation target
-        
+        # Get input video FPS for smart interpolation targeting
+        input_fps = get_video_fps(input_path, interpolator_script)
+
+        # Calculate optimal target FPS: double the input FPS for minimal interpolation
+        # This adds one interpolated frame between each original frame
+        if target_fps is None:
+            target_fps = input_fps * 2
+            print(f"   📊 Input FPS: {input_fps:.1f}, Target FPS: {target_fps:.1f} (1 interpolated frame between originals)")
+        else:
+            print(f"   📊 Input FPS: {input_fps:.1f}, Custom Target FPS: {target_fps:.1f}")
+
         cmd = [
             "python", interpolator_script,
             "-i", input_path,
             "-o", output_path,
             "--method", interpolation_method,
-            "--fps", str(target_fps),
+            "--fps", str(int(target_fps)),  # Convert to int for cleaner output
             "--no-audio",
             "--remove-frames", "3"
         ]
-            
+
     else:
         # For traditional methods, use --interpolation with --speed
         cmd = [
@@ -87,7 +126,7 @@ def process_video(input_path: str, output_path: str, speed: float, interpolation
             "--no-audio",
             "--remove-frames", "3"
         ]
-    
+
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         print(f"   ✓ Success!")
@@ -119,7 +158,9 @@ def call_video_info_script(video_path: str, interpolator_script: str = "video_in
 
 def main() -> None:
     """Main function to process all videos in batch."""
-    print("🎬 Batch Video Processing - Custom Speed with Interpolation (Remove First 3 Frames)")
+    print("🎬 Batch Video Processing - Smart Interpolation with Minimal Artifacts")
+    print("   AI Methods: Smart FPS targeting (double input FPS by default)")
+    print("   Traditional Methods: Custom speed with interpolation")
     print("=" * 60)
     
     # Configuration
@@ -164,8 +205,8 @@ def main() -> None:
     print("   1. frame_duplication - Fastest, duplicates frames")
     print("   2. temporal - Balanced quality using minterpolate filter")
     print("   3. optical_flow - High quality using optical flow")
-    print("   4. advanced - Best quality, multi-pass processing")
-    print("   5. tlbvfi - AI-powered, state-of-the-art quality (requires PyTorch)")
+    print("   4. advanced - Smart FPS targeting, enhanced single-pass (minimal artifacts)")
+    print("   5. tlbvfi - AI-powered, state-of-the-art quality with smart FPS (requires PyTorch)")
     
     while True:
         method_input = input("\n⚙️  Choose interpolation method (1-5) or enter method name: ").strip()
@@ -195,11 +236,34 @@ def main() -> None:
         print("\n🤖 TLBVFI Selected - AI-Powered Interpolation")
         print("   Note: This method requires PyTorch and may take longer to process.")
         print("   GPU acceleration will be used if available.")
-        print("   TLBVFI will interpolate to 60fps (no speed adjustment).")
-        print("   If TLBVFI fails, processing will stop.")
-    
+        print("   TLBVFI will use smart FPS targeting (no speed adjustment).")
+        print("   If TLBVFI fails, the system will fall back to temporal interpolation.")
+
+    # Ask for custom target FPS for AI methods
+    target_fps = None
     if interpolation_method in ['tlbvfi', 'advanced']:
-        print(f"⚙️  Processing settings: {interpolation_method} interpolation to 60fps (no audio, remove first 3 frames)")
+        print("\n🎯 FPS Configuration for AI Methods")
+        print("   Default: Smart targeting (double input FPS for minimal interpolation)")
+        print("   Example: 8 FPS input → 16 FPS output (one interpolated frame between originals)")
+
+        fps_input = input("   Enter custom target FPS (or press Enter for smart default): ").strip()
+        if fps_input:
+            try:
+                target_fps = float(fps_input)
+                if target_fps <= 0:
+                    print("   ⚠️  Invalid FPS, using smart default")
+                    target_fps = None
+                else:
+                    print(f"   ✓ Custom target FPS set: {target_fps}")
+            except ValueError:
+                print("   ⚠️  Invalid input, using smart default")
+                target_fps = None
+
+    if interpolation_method in ['tlbvfi', 'advanced']:
+        if target_fps:
+            print(f"⚙️  Processing settings: {interpolation_method} interpolation to {target_fps:.1f}fps (no audio, remove first 3 frames)")
+        else:
+            print(f"⚙️  Processing settings: {interpolation_method} interpolation with smart FPS targeting (no audio, remove first 3 frames)")
     else:
         print(f"⚙️  Processing settings: {speed}x speed with {interpolation_method} interpolation (no audio, remove first 3 frames)")
     print("-" * 60)
@@ -215,11 +279,16 @@ def main() -> None:
         # Create output filename
         input_filename = os.path.basename(input_path)
         name, ext = os.path.splitext(input_filename)
-        output_filename = f"{name}_{speed}x_{interpolation_method}{ext}"
+
+        # Include target FPS in filename for AI methods
+        if interpolation_method in ['tlbvfi', 'advanced'] and target_fps:
+            output_filename = f"{name}_{int(target_fps)}fps_{interpolation_method}{ext}"
+        else:
+            output_filename = f"{name}_{speed}x_{interpolation_method}{ext}"
         output_path = os.path.join(output_dir, output_filename)
         
         # Process the video
-        success = process_video(input_path, output_path, speed, interpolation_method, interpolator_script)
+        success = process_video(input_path, output_path, speed, interpolation_method, interpolator_script, target_fps)
         
         if success:
             successful += 1
